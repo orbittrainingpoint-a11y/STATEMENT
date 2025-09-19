@@ -19,6 +19,10 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
     });
   };
 
+  const formatDateForFilename = (dateString: string) => {
+    return new Date(dateString).toISOString().split('T')[0]; // Returns YYYY-MM-DD
+  };
+
   const formatCurrency = (amount: string | number) => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
     return num.toLocaleString('en-US', {
@@ -68,7 +72,7 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   const currentDate = new Date().toLocaleDateString('en-GB');
-  doc.text(`Generated ${currentDate} by MOHAMMED ALI`, pageWidth / 2, yPosition, { align: 'center' });
+  doc.text(`Generated ${currentDate}`, pageWidth / 2, yPosition, { align: 'center' });
   yPosition += 20;
 
   // Account Information
@@ -136,36 +140,45 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
   if (transactions.length > 0) {
     // Table headers
     const headers = ['Date', 'Value Date', 'Narration', 'Debit', 'Credit', 'Balance'];
-    const colWidths = [25, 25, 80, 25, 25, 25];
+    // Adjust column widths to fit within contentWidth (~170)
+    const colWidths = [20, 20, 70, 20, 20, 20]; // Total = 170, fits within contentWidth
     const colPositions = colWidths.reduce((acc, width, i) => {
       acc.push(i === 0 ? margin : acc[i - 1] + colWidths[i - 1]);
       return acc;
     }, [] as number[]);
 
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    
-    // Draw header background
-    doc.setFillColor(240, 240, 240);
-    doc.rect(margin, yPosition - 2, contentWidth, 8, 'F');
-    
-    headers.forEach((header, i) => {
-      if (i >= 3) {
-        doc.text(header, colPositions[i] + colWidths[i] - 2, yPosition + 3, { align: 'right' });
-      } else {
-        doc.text(header, colPositions[i] + 2, yPosition + 3);
-      }
-    });
-    
-    yPosition += 10;
-    
-    // Table border
-    addLine(margin, yPosition - 6, pageWidth - margin, yPosition - 6);
+    const drawTableHeader = () => {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      
+      // Draw header background
+      doc.setFillColor(240, 240, 240);
+      doc.rect(margin, yPosition - 2, contentWidth, 8, 'F');
+      
+      headers.forEach((header, i) => {
+        if (i >= 3) {
+          doc.text(header, colPositions[i] + colWidths[i] - 2, yPosition + 3, { align: 'right' });
+        } else {
+          doc.text(header, colPositions[i] + 2, yPosition + 3);
+        }
+      });
+      
+      yPosition += 10;
+      
+      // Table border
+      addLine(margin, yPosition - 6, pageWidth - margin, yPosition - 6);
+    };
+
+    // Draw initial table header
+    drawTableHeader();
 
     // Transaction rows
     doc.setFont('helvetica', 'normal');
     transactions.forEach((transaction, index) => {
-      checkPageBreak(8);
+      const isNewPage = checkPageBreak(8);
+      if (isNewPage) {
+        drawTableHeader(); // Redraw header on new page
+      }
       
       const rowData = [
         formatDate(transaction.transactionDate),
@@ -214,6 +227,6 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
   }
 
   // Save the PDF
-  const fileName = `Account_Statement_${setup.accountNumber}_${formatDate(setup.fromDate)}_to_${formatDate(setup.toDate)}.pdf`;
+  const fileName = `Account_Statement_${setup.accountNumber}_${formatDateForFilename(setup.fromDate)}_to_${formatDateForFilename(setup.toDate)}.pdf`;
   doc.save(fileName);
 }
