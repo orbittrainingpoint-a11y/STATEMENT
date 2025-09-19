@@ -1,5 +1,7 @@
-import { type AccountSetup, type InsertAccountSetup, type Transaction, type InsertTransaction } from "@shared/schema";
+import { type AccountSetup, type InsertAccountSetup, type Transaction, type InsertTransaction, accountSetups, transactions } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // Account Setup methods
@@ -129,4 +131,104 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  // Account Setup methods
+  async getAccountSetup(id: string): Promise<AccountSetup | undefined> {
+    const [setup] = await db.select().from(accountSetups).where(eq(accountSetups.id, id));
+    return setup || undefined;
+  }
+
+  async getAllAccountSetups(): Promise<AccountSetup[]> {
+    return await db.select().from(accountSetups);
+  }
+
+  async createAccountSetup(insertSetup: InsertAccountSetup): Promise<AccountSetup> {
+    const [setup] = await db
+      .insert(accountSetups)
+      .values({
+        ...insertSetup,
+        bankLogoUrl: insertSetup.bankLogoUrl || null,
+        currency: insertSetup.currency || "AED",
+      })
+      .returning();
+    return setup;
+  }
+
+  async updateAccountSetup(id: string, updateData: Partial<InsertAccountSetup>): Promise<AccountSetup | undefined> {
+    const [updated] = await db
+      .update(accountSetups)
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
+      })
+      .where(eq(accountSetups.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteAccountSetup(id: string): Promise<boolean> {
+    const result = await db
+      .delete(accountSetups)
+      .where(eq(accountSetups.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Transaction methods
+  async getTransaction(id: string): Promise<Transaction | undefined> {
+    const [transaction] = await db.select().from(transactions).where(eq(transactions.id, id));
+    return transaction || undefined;
+  }
+
+  async getTransactionsByAccountSetup(accountSetupId: string): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.accountSetupId, accountSetupId));
+  }
+
+  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+    const [transaction] = await db
+      .insert(transactions)
+      .values({
+        ...insertTransaction,
+        accountSetupId: insertTransaction.accountSetupId || null,
+        debitAmount: insertTransaction.debitAmount || "0.00",
+        creditAmount: insertTransaction.creditAmount || "0.00",
+      })
+      .returning();
+    return transaction;
+  }
+
+  async createTransactions(insertTransactions: InsertTransaction[]): Promise<Transaction[]> {
+    if (insertTransactions.length === 0) return [];
+    
+    const createdTransactions = await db
+      .insert(transactions)
+      .values(
+        insertTransactions.map(t => ({
+          ...t,
+          accountSetupId: t.accountSetupId || null,
+          debitAmount: t.debitAmount || "0.00",
+          creditAmount: t.creditAmount || "0.00",
+        }))
+      )
+      .returning();
+    return createdTransactions;
+  }
+
+  async deleteTransaction(id: string): Promise<boolean> {
+    const result = await db
+      .delete(transactions)
+      .where(eq(transactions.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async deleteTransactionsByAccountSetup(accountSetupId: string): Promise<boolean> {
+    const result = await db
+      .delete(transactions)
+      .where(eq(transactions.accountSetupId, accountSetupId));
+    return (result.rowCount ?? 0) > 0;
+  }
+}
+
+export const storage = new DatabaseStorage();

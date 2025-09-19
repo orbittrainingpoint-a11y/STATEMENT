@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, decimal, timestamp, integer } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -80,5 +81,17 @@ export const csvTransactionSchema = z.object({
   message: "Exactly one of debit or credit amount must be greater than 0",
   path: ["debitAmount", "creditAmount"],
 });
+
+// Database relations
+export const accountSetupsRelations = relations(accountSetups, ({ many }) => ({
+  transactions: many(transactions),
+}));
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  accountSetup: one(accountSetups, {
+    fields: [transactions.accountSetupId],
+    references: [accountSetups.id],
+  }),
+}));
 
 export type CSVTransaction = z.infer<typeof csvTransactionSchema>;
