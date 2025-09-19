@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { List, Trash, Trash2 } from "lucide-react";
+import { List, Trash, Trash2, Download } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -83,6 +83,46 @@ export default function TransactionTable({ transactions, accountSetupId, isLoadi
     }
   };
 
+  const exportToCSV = () => {
+    if (transactions.length === 0) return;
+    
+    const headers = [
+      'Transaction Date',
+      'Value Date', 
+      'Narration',
+      'Debit Amount',
+      'Credit Amount',
+      'Running Balance'
+    ];
+    
+    const csvContent = [
+      headers.join(','),
+      ...transactions.map(transaction => [
+        `"${formatDate(transaction.transactionDate)}"`,
+        `"${formatDate(transaction.valueDate)}"`,
+        `"${transaction.narration.replace(/"/g, '""')}"`,
+        formatCurrency(transaction.debitAmount),
+        formatCurrency(transaction.creditAmount),
+        formatCurrency(transaction.runningBalance || '0')
+      ].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `transactions_march_2024.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Success",
+      description: "Transactions exported to CSV successfully",
+    });
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -116,16 +156,28 @@ export default function TransactionTable({ transactions, accountSetupId, isLoadi
               Total Records: {transactions.length}
             </span>
             {transactions.length > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleClearAll}
-                disabled={clearAllTransactionsMutation.isPending}
-                data-testid="button-clear-all"
-              >
-                <Trash2 className="mr-1 h-4 w-4" />
-                Clear All
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportToCSV}
+                  data-testid="button-export-csv"
+                  className="mr-2"
+                >
+                  <Download className="mr-1 h-4 w-4" />
+                  Export CSV
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleClearAll}
+                  disabled={clearAllTransactionsMutation.isPending}
+                  data-testid="button-clear-all"
+                >
+                  <Trash2 className="mr-1 h-4 w-4" />
+                  Clear All
+                </Button>
+              </>
             )}
           </div>
         </div>
