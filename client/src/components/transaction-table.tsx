@@ -112,7 +112,7 @@ export default function TransactionTable({ transactions, accountSetupId, isLoadi
             Transactions
           </CardTitle>
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-muted-foreground" data-testid="text-total-records">
+            <span className="text-sm font-medium text-gray-600" data-testid="text-total-records">
               Total Records: {transactions.length}
             </span>
             {transactions.length > 0 && (
@@ -139,59 +139,51 @@ export default function TransactionTable({ transactions, accountSetupId, isLoadi
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <Table>
+            <Table className="border border-gray-300">
               <TableHeader>
-                <TableRow>
-                  <TableHead>Transaction Date</TableHead>
-                  <TableHead>Value Date</TableHead>
-                  <TableHead>Narration</TableHead>
-                  <TableHead className="text-right">Debit</TableHead>
-                  <TableHead className="text-right">Credit</TableHead>
-                  <TableHead className="text-right">Running Balance</TableHead>
-                  <TableHead className="text-center">Actions</TableHead>
+                <TableRow className="bg-gray-50 border-b border-gray-300">
+                  <TableHead className="border-r border-gray-300 font-semibold text-gray-700 text-center py-3">
+                    Transaction Date
+                  </TableHead>
+                  <TableHead className="border-r border-gray-300 font-semibold text-gray-700 text-center py-3">
+                    Value Date
+                  </TableHead>
+                  <TableHead className="border-r border-gray-300 font-semibold text-gray-700 text-center py-3 min-w-[300px]">
+                    Narration
+                  </TableHead>
+                  <TableHead className="border-r border-gray-300 font-semibold text-gray-700 text-center py-3">
+                    Debit
+                  </TableHead>
+                  <TableHead className="border-r border-gray-300 font-semibold text-gray-700 text-center py-3">
+                    Credit
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-center py-3">
+                    Running Balance
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {transactions.map((transaction, index) => (
-                  <TableRow key={transaction.id} data-testid={`row-transaction-${index}`}>
-                    <TableCell data-testid={`text-transaction-date-${index}`}>
+                  <TableRow key={transaction.id} data-testid={`row-transaction-${index}`} className="border-b border-gray-200 hover:bg-gray-50">
+                    <TableCell className="border-r border-gray-200 text-center py-3" data-testid={`text-transaction-date-${index}`}>
                       {formatDate(transaction.transactionDate)}
                     </TableCell>
-                    <TableCell data-testid={`text-value-date-${index}`}>
+                    <TableCell className="border-r border-gray-200 text-center py-3" data-testid={`text-value-date-${index}`}>
                       {formatDate(transaction.valueDate)}
                     </TableCell>
-                    <TableCell className="max-w-xs truncate" title={transaction.narration} data-testid={`text-narration-${index}`}>
-                      {transaction.narration}
+                    <TableCell className="border-r border-gray-200 py-3 px-4" data-testid={`text-narration-${index}`}>
+                      <div className="whitespace-normal text-sm leading-relaxed">
+                        {transaction.narration}
+                      </div>
                     </TableCell>
-                    <TableCell 
-                      className={`text-right ${parseFloat(transaction.debitAmount) > 0 ? 'text-red-600' : 'text-muted-foreground'}`}
-                      data-testid={`text-debit-${index}`}
-                    >
+                    <TableCell className="border-r border-gray-200 text-right py-3 pr-4" data-testid={`text-debit-${index}`}>
                       {parseFloat(transaction.debitAmount) > 0 ? formatCurrency(transaction.debitAmount) : '0.00'}
                     </TableCell>
-                    <TableCell 
-                      className={`text-right ${parseFloat(transaction.creditAmount) > 0 ? 'text-green-600' : 'text-muted-foreground'}`}
-                      data-testid={`text-credit-${index}`}
-                    >
+                    <TableCell className="border-r border-gray-200 text-right py-3 pr-4" data-testid={`text-credit-${index}`}>
                       {parseFloat(transaction.creditAmount) > 0 ? formatCurrency(transaction.creditAmount) : '0.00'}
                     </TableCell>
-                    <TableCell 
-                      className={`text-right font-medium ${parseFloat(transaction.runningBalance || '0') >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                      data-testid={`text-running-balance-${index}`}
-                    >
+                    <TableCell className="text-right py-3 pr-4 font-medium" data-testid={`text-running-balance-${index}`}>
                       {formatCurrency(transaction.runningBalance || '0')}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteTransaction(transaction.id)}
-                        disabled={deleteTransactionMutation.isPending}
-                        className="text-destructive hover:text-destructive/80"
-                        data-testid={`button-delete-transaction-${index}`}
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
