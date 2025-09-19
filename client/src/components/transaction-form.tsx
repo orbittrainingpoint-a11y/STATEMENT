@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertTransactionSchema } from "@shared/schema";
+import { baseInsertTransactionSchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -19,7 +19,7 @@ export default function TransactionForm({ accountSetupId }: TransactionFormProps
   const queryClient = useQueryClient();
 
   const form = useForm({
-    resolver: zodResolver(insertTransactionSchema.omit({ accountSetupId: true })),
+    resolver: zodResolver(baseInsertTransactionSchema.omit({ accountSetupId: true })),
     defaultValues: {
       transactionDate: "",
       valueDate: "",
@@ -59,6 +59,15 @@ export default function TransactionForm({ accountSetupId }: TransactionFormProps
       toast({
         title: "Error",
         description: "Please enter either a debit or credit amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (debit > 0 && credit > 0) {
+      toast({
+        title: "Error",
+        description: "Please enter either a debit OR credit amount, not both",
         variant: "destructive",
       });
       return;

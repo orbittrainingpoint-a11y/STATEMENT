@@ -41,10 +41,21 @@ export const insertAccountSetupSchema = createInsertSchema(accountSetups).omit({
   updatedAt: true,
 });
 
-export const insertTransactionSchema = createInsertSchema(transactions).omit({
+// Base schema without validation for use with omit()
+export const baseInsertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
   runningBalance: true,
   createdAt: true,
+});
+
+// Schema with validation for API use
+export const insertTransactionSchema = baseInsertTransactionSchema.refine((data) => {
+  const debit = parseFloat(data.debitAmount || "0") || 0;
+  const credit = parseFloat(data.creditAmount || "0") || 0;
+  return (debit > 0 && credit === 0) || (credit > 0 && debit === 0);
+}, {
+  message: "Exactly one of debit or credit amount must be greater than 0",
+  path: ["debitAmount", "creditAmount"],
 });
 
 export const updateAccountSetupSchema = insertAccountSetupSchema.partial();
@@ -61,6 +72,13 @@ export const csvTransactionSchema = z.object({
   narration: z.string().min(1, "Narration is required"),
   debitAmount: z.string().default("0.00"),
   creditAmount: z.string().default("0.00"),
+}).refine((data) => {
+  const debit = parseFloat(data.debitAmount || "0") || 0;
+  const credit = parseFloat(data.creditAmount || "0") || 0;
+  return (debit > 0 && credit === 0) || (credit > 0 && debit === 0);
+}, {
+  message: "Exactly one of debit or credit amount must be greater than 0",
+  path: ["debitAmount", "creditAmount"],
 });
 
 export type CSVTransaction = z.infer<typeof csvTransactionSchema>;
