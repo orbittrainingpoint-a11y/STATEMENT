@@ -98,18 +98,18 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
   doc.text(`Generated ${currentDate} by ${userName}`, pageWidth / 2, yPosition, { align: 'center' });
   yPosition += 25;
 
-  // Account Information - styled like Emirates NBD
-  doc.setFontSize(14);
+  // Account Information - styled exactly like Emirates NBD
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(28, 49, 130); // Navy blue
   doc.text('Account Information', margin, yPosition);
-  yPosition += 10;
+  yPosition += 12;
 
   // Add separator line
-  doc.setDrawColor(200, 200, 200);
-  doc.setLineWidth(0.5);
+  doc.setDrawColor(150, 150, 150);
+  doc.setLineWidth(1);
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 8;
+  yPosition += 12;
 
   const accountInfoLeft = [
     ['Account Number', setup.accountNumber],
@@ -119,110 +119,119 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
   ];
 
   const accountInfoRight = [
-    ['Account Name', setup.accountName],
-    ['Country', setup.country],
+    ['Account Name', setup.accountName.toUpperCase()],
+    ['Country', setup.country.toUpperCase()],
     ['BIC Code', 'EBILEADXXX'],
     ['IBAN', setup.iban],
   ];
 
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 100, 100); // Gray color for labels
+  doc.setFontSize(10);
+  doc.setTextColor(120, 120, 120); // Gray color for labels
   
   // Left column
   const leftStartY = yPosition;
   accountInfoLeft.forEach(([label, value], index) => {
-    const currentY = leftStartY + (index * 12);
+    const currentY = leftStartY + (index * 16);
+    doc.setFont('helvetica', 'normal');
     doc.text(label, margin, currentY);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0); // Black for values
-    doc.text(value, margin + 45, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
+    doc.text(value, margin + 55, currentY);
+    doc.setTextColor(120, 120, 120);
   });
 
-  // Right column
-  const rightStart = pageWidth / 2 + 10;
+  // Right column - positioned better
+  const rightStart = pageWidth / 2 + 5;
   accountInfoRight.forEach(([label, value], index) => {
-    const currentY = leftStartY + (index * 12);
+    const currentY = leftStartY + (index * 16);
+    doc.setFont('helvetica', 'normal');
     doc.text(label, rightStart, currentY);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text(value, rightStart + 45, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
+    doc.text(value, rightStart + 55, currentY);
+    doc.setTextColor(120, 120, 120);
   });
 
-  yPosition += 55;
+  yPosition += 70;
 
-  // Balance Information - styled like Emirates NBD
-  doc.setFontSize(14);
+  // Balance Information - styled exactly like Emirates NBD
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(28, 49, 130); // Navy blue
   doc.text('Balance Information', margin, yPosition);
-  yPosition += 10;
+  yPosition += 12;
 
   // Add separator line
-  doc.setDrawColor(200, 200, 200);
-  doc.setLineWidth(0.5);
+  doc.setDrawColor(150, 150, 150);
+  doc.setLineWidth(1);
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 8;
+  yPosition += 12;
 
   const balanceInfoLeft = [
     ['Current Balance', formatCurrency(setup.currentBalance)],
     ['Uncleared Balance', '0.00'],
     ['Account Status', 'Active'],
+    ['Mailing Address', '--'],
   ];
 
   const balanceInfoRight = [
     ['Effective Available Balance', formatCurrency(setup.availableBalance)],
     ['Tax Registration Number', '--'],
-    ['Mailing Address', '--'],
+    ['', ''], // Empty row for alignment
+    ['', ''], // Empty row for alignment
   ];
+
+  doc.setFontSize(10);
+  doc.setTextColor(120, 120, 120); // Gray color for labels
 
   // Left column
   const balanceLeftStartY = yPosition;
   balanceInfoLeft.forEach(([label, value], index) => {
-    const currentY = balanceLeftStartY + (index * 12);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
-    doc.text(label, margin, currentY);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 0, 0);
-    doc.text(value, margin + 45, currentY);
+    const currentY = balanceLeftStartY + (index * 16);
+    if (label) {
+      doc.setFont('helvetica', 'normal');
+      doc.text(label, margin, currentY);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text(value, margin + 55, currentY);
+      doc.setTextColor(120, 120, 120);
+    }
   });
 
   // Right column
   balanceInfoRight.forEach(([label, value], index) => {
-    const currentY = balanceLeftStartY + (index * 12);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
-    doc.text(label, rightStart, currentY);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 0, 0);
-    doc.text(value, rightStart + 45, currentY);
+    const currentY = balanceLeftStartY + (index * 16);
+    if (label) {
+      doc.setFont('helvetica', 'normal');
+      doc.text(label, rightStart, currentY);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text(value, rightStart + 55, currentY);
+      doc.setTextColor(120, 120, 120);
+    }
   });
 
-  yPosition += 45;
+  yPosition += 70;
 
-  // Account Statement Section - styled like Emirates NBD
-  doc.setFontSize(14);
+  // Account Statement Section - styled exactly like Emirates NBD
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(28, 49, 130); // Navy blue
   doc.text('Account Statement', margin, yPosition);
-  doc.setTextColor(100, 100, 100); // Gray for record count
+  doc.setTextColor(120, 120, 120); // Gray for record count
+  doc.setFont('helvetica', 'normal');
   doc.text(`Total Records: ${transactions.length}`, pageWidth - margin, yPosition, { align: 'right' });
-  yPosition += 10;
+  yPosition += 12;
 
   // Add separator line
-  doc.setDrawColor(200, 200, 200);
-  doc.setLineWidth(0.5);
+  doc.setDrawColor(150, 150, 150);
+  doc.setLineWidth(1);
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 8;
+  yPosition += 12;
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 100, 100);
+  doc.setTextColor(120, 120, 120);
   doc.text(`From: ${formatDate(setup.fromDate)} to ${formatDate(setup.toDate)}`, margin, yPosition);
   yPosition += 15;
 
