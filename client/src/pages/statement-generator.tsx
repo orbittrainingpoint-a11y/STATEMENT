@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FileText, Download } from "lucide-react";
@@ -30,6 +30,13 @@ export default function StatementGenerator() {
   const currentSetup = currentAccountSetupId 
     ? accountSetups.find((setup: AccountSetup) => setup.id === currentAccountSetupId)
     : accountSetups[0];
+
+  // Auto-select the first account setup when data loads
+  useEffect(() => {
+    if (accountSetups.length > 0 && !currentAccountSetupId) {
+      setCurrentAccountSetupId(accountSetups[0].id);
+    }
+  }, [accountSetups, currentAccountSetupId]);
 
   // Mutations
   const createSetupMutation = useMutation({
