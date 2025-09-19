@@ -66,46 +66,20 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
   const actualFromDate = sortedTransactions.length > 0 ? sortedTransactions[0].transactionDate : setup.fromDate;
   const actualToDate = sortedTransactions.length > 0 ? sortedTransactions[sortedTransactions.length - 1].transactionDate : setup.toDate;
 
-  // Header with businessONLINE and Emirates NBD styling
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(28, 49, 130); // Dark blue for businessONLINE
-  doc.text('business', margin, yPosition);
-  
-  // Get text width for businessONLINE positioning
-  const businessWidth = doc.getTextWidth('business');
-  doc.setTextColor(240, 103, 33); // Orange for ONLINE
-  doc.text('ONLINE', margin + businessWidth, yPosition);
-
-  // Emirates NBD on right side with background
-  const embWidth = doc.getTextWidth('Emirates NBD');
-  const embX = pageWidth - margin - embWidth - 8;
-  doc.setFillColor(28, 49, 130); // Emirates NBD blue
-  doc.roundedRect(embX - 4, yPosition - 8, embWidth + 8, 12, 2, 2, 'F');
-  doc.setTextColor(255, 255, 255); // White text
-  doc.text('Emirates NBD', embX, yPosition);
-  yPosition += 10;
-
-  // Header line
-  doc.setDrawColor(28, 49, 130); // Navy blue line
-  doc.setLineWidth(2);
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 20;
-
-  // Ensure space for title section
-  ensureSpace(30);
+  // Header - Match reference PDF exactly
+  yPosition += 40; // More space at top
   
   // Title
-  doc.setFontSize(18);
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(28, 49, 130); // Navy blue for title
+  doc.setTextColor(0, 0, 0); // Black color
   doc.text('Account Statement', pageWidth / 2, yPosition, { align: 'center' });
-  yPosition += 10;
+  yPosition += 8;
 
   // Generated date and user info
-  doc.setFontSize(10);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 100, 100); // Gray color
+  doc.setTextColor(0, 0, 0); // Black color
   const currentDate = new Date().toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'long',
@@ -115,183 +89,152 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
   doc.text(`Generated ${currentDate} by ${userName}`, pageWidth / 2, yPosition, { align: 'center' });
   yPosition += 25;
 
-  // Ensure space for Account Information section
-  ensureSpace(90);
-  
-  // Account Information - styled exactly like Emirates NBD
-  doc.setFontSize(16);
+  // Account Information - Match reference PDF format
+  ensureSpace(40);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(28, 49, 130); // Navy blue
+  doc.setTextColor(0, 0, 0);
   doc.text('Account Information', margin, yPosition);
-  yPosition += 12;
-
-  // Add separator line
-  doc.setDrawColor(150, 150, 150);
-  doc.setLineWidth(1);
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 12;
-
-  const accountInfoLeft = [
-    ['Account Number', setup.accountNumber],
-    ['Currency', setup.currency],
-    ['Account Type', setup.accountType],
-    ['Registered Address', setup.address],
-  ];
-
-  const accountInfoRight = [
-    ['Account Name', setup.accountName.toUpperCase()],
-    ['Country', setup.country.toUpperCase()],
-    ['BIC Code', 'EBILEADXXX'],
-    ['IBAN', setup.iban],
-  ];
+  yPosition += 8;
 
   doc.setFontSize(10);
-  doc.setTextColor(120, 120, 120); // Gray color for labels
+  doc.setFont('helvetica', 'normal');
   
-  // Left column
-  const leftStartY = yPosition;
-  accountInfoLeft.forEach(([label, value], index) => {
-    const currentY = leftStartY + (index * 16);
-    doc.setFont('helvetica', 'normal');
-    doc.text(label, margin, currentY);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 0, 0); // Black for values
-    doc.text(value, margin + 55, currentY);
-    doc.setTextColor(120, 120, 120);
-  });
-
-  // Right column - positioned better
-  const rightStart = pageWidth / 2 + 5;
-  accountInfoRight.forEach(([label, value], index) => {
-    const currentY = leftStartY + (index * 16);
-    doc.setFont('helvetica', 'normal');
-    doc.text(label, rightStart, currentY);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 0, 0);
-    doc.text(value, rightStart + 55, currentY);
-    doc.setTextColor(120, 120, 120);
-  });
-
-  yPosition += 70;
-
-  // Ensure space for Balance Information section
-  ensureSpace(90);
+  // Row 1: Account Number and Account Name
+  doc.text('Account Number', margin, yPosition);
+  doc.text(setup.accountNumber, margin + 60, yPosition);
+  doc.text('Account Name', pageWidth / 2, yPosition);
+  doc.text(setup.accountName.toUpperCase(), pageWidth / 2 + 60, yPosition);
+  yPosition += 12;
   
-  // Balance Information - styled exactly like Emirates NBD
-  doc.setFontSize(16);
+  // Continue Account Name if long
+  if (setup.accountName.length > 25) {
+    yPosition += 6;
+  }
+
+  // Row 2: Currency and Country  
+  doc.text('Currency', margin, yPosition);
+  doc.text(setup.currency, margin + 60, yPosition);
+  doc.text('Country', pageWidth / 2, yPosition);
+  doc.text(setup.country.toUpperCase(), pageWidth / 2 + 60, yPosition);
+  yPosition += 12;
+
+  // Row 3: Account Type and BIC Code
+  doc.text('Account Type', margin, yPosition);
+  doc.text(setup.accountType.toUpperCase(), margin + 60, yPosition);
+  doc.text('BIC Code', pageWidth / 2, yPosition);
+  doc.text('EBILAEADXXX', pageWidth / 2 + 60, yPosition);
+  yPosition += 12;
+
+  // Row 4: Registered Address and IBAN
+  doc.text('Registered Address', margin, yPosition);
+  const addressLines = doc.splitTextToSize(setup.address, 80);
+  addressLines.forEach((line: string, index: number) => {
+    doc.text(line, margin + 60, yPosition + (index * 6));
+  });
+  doc.text('IBAN', pageWidth / 2, yPosition);
+  doc.text(setup.iban, pageWidth / 2 + 60, yPosition);
+  yPosition += Math.max(12, addressLines.length * 6);
+  yPosition += 10;
+
+  // Balance Information - Match reference PDF format
+  ensureSpace(40);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(28, 49, 130); // Navy blue
+  doc.setTextColor(0, 0, 0);
   doc.text('Balance Information', margin, yPosition);
-  yPosition += 12;
-
-  // Add separator line
-  doc.setDrawColor(150, 150, 150);
-  doc.setLineWidth(1);
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 12;
-
-  const balanceInfoLeft = [
-    ['Current Balance', formatCurrency(setup.currentBalance)],
-    ['Uncleared Balance', '0.00'],
-    ['Account Status', 'Active'],
-    ['Mailing Address', '--'],
-  ];
-
-  const balanceInfoRight = [
-    ['Effective Available Balance', formatCurrency(setup.availableBalance)],
-    ['Tax Registration Number', '--'],
-    ['', ''], // Empty row for alignment
-    ['', ''], // Empty row for alignment
-  ];
+  yPosition += 8;
 
   doc.setFontSize(10);
-  doc.setTextColor(120, 120, 120); // Gray color for labels
+  doc.setFont('helvetica', 'normal');
+  
+  // Row 1: Current Balance and Effective Available Balance
+  doc.text('Current Balance', margin, yPosition);
+  doc.text(formatCurrency(setup.currentBalance), margin + 60, yPosition);
+  doc.text('Effective Available', pageWidth / 2, yPosition);
+  doc.text(formatCurrency(setup.availableBalance), pageWidth / 2 + 60, yPosition);
+  yPosition += 6;
+  doc.text('Balance', pageWidth / 2 + 60, yPosition);
+  yPosition += 8;
 
-  // Left column
-  const balanceLeftStartY = yPosition;
-  balanceInfoLeft.forEach(([label, value], index) => {
-    const currentY = balanceLeftStartY + (index * 16);
-    if (label) {
-      doc.setFont('helvetica', 'normal');
-      doc.text(label, margin, currentY);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 0, 0);
-      doc.text(value, margin + 55, currentY);
-      doc.setTextColor(120, 120, 120);
-    }
-  });
+  // Row 2: Uncleared Balance and Tax Registration Number
+  doc.text('Uncleared Balance', margin, yPosition);
+  doc.text('0.00', margin + 60, yPosition);
+  doc.text('Tax Registration', pageWidth / 2, yPosition);
+  doc.text('--', pageWidth / 2 + 60, yPosition);
+  yPosition += 6;
+  doc.text('Number', pageWidth / 2, yPosition);
+  yPosition += 8;
 
-  // Right column
-  balanceInfoRight.forEach(([label, value], index) => {
-    const currentY = balanceLeftStartY + (index * 16);
-    if (label) {
-      doc.setFont('helvetica', 'normal');
-      doc.text(label, rightStart, currentY);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 0, 0);
-      doc.text(value, rightStart + 55, currentY);
-      doc.setTextColor(120, 120, 120);
-    }
-  });
+  // Row 3: Account Status
+  doc.text('Account Status', margin, yPosition);
+  doc.text('Active', margin + 60, yPosition);
+  yPosition += 8;
 
-  yPosition += 70;
+  // Row 4: Mailing Address
+  doc.text('Mailing Address', margin, yPosition);
+  doc.text('--', margin + 60, yPosition);
+  yPosition += 15;
 
-  // Ensure space for Account Statement section and table
+  // Account Statement Section - Match reference PDF format
   ensureSpace(50);
   
-  // Account Statement Section - styled exactly like Emirates NBD
-  doc.setFontSize(16);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(28, 49, 130); // Navy blue
+  doc.setTextColor(0, 0, 0);
   doc.text('Account Statement', margin, yPosition);
-  doc.setTextColor(120, 120, 120); // Gray for record count
   doc.setFont('helvetica', 'normal');
   doc.text(`Total Records: ${transactions.length}`, pageWidth - margin, yPosition, { align: 'right' });
-  yPosition += 12;
-
-  // Add separator line
-  doc.setDrawColor(150, 150, 150);
-  doc.setLineWidth(1);
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 12;
+  yPosition += 15;
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(120, 120, 120);
-  doc.text(`From: ${formatDate(actualFromDate)} to ${formatDate(actualToDate)}`, margin, yPosition);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`From: ${formatDate(actualFromDate)} to ${formatDate(actualToDate)}`, pageWidth / 2, yPosition, { align: 'center' });
   yPosition += 15;
 
   // Transactions table
   if (transactions.length > 0) {
-    // Table headers
-    const headers = ['Date', 'Value Date', 'Narration', 'Debit', 'Credit', 'Balance'];
-    // Improved column widths for better readability
-    const colWidths = [22, 22, 80, 22, 22, 24]; // Total = 192, better balance
+    // Table headers - Match reference PDF format exactly
+    const headers = ['Transaction', 'Value Date', 'Narration', 'Debit', 'Credit', 'Running'];
+    const headers2 = ['Date', '', '', '', '', 'Balance'];
+    // Column widths matching reference PDF layout
+    const colWidths = [20, 20, 90, 25, 25, 25]; // Total fits A4 width
     const colPositions = colWidths.reduce((acc, width, i) => {
       acc.push(i === 0 ? margin : acc[i - 1] + colWidths[i - 1]);
       return acc;
     }, [] as number[]);
 
     const drawTableHeader = () => {
-      doc.setFontSize(8);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
       
-      // Draw header background
-      doc.setFillColor(240, 240, 240);
-      doc.rect(margin, yPosition - 2, contentWidth, 8, 'F');
-      
+      // Draw first header row
       headers.forEach((header, i) => {
         if (i >= 3) {
-          doc.text(header, colPositions[i] + colWidths[i] - 2, yPosition + 3, { align: 'right' });
+          doc.text(header, colPositions[i] + colWidths[i] - 2, yPosition, { align: 'right' });
         } else {
-          doc.text(header, colPositions[i] + 2, yPosition + 3);
+          doc.text(header, colPositions[i] + 2, yPosition);
         }
       });
+      yPosition += 6;
       
-      yPosition += 10;
+      // Draw second header row for multi-line headers
+      headers2.forEach((header, i) => {
+        if (header && i >= 3) {
+          doc.text(header, colPositions[i] + colWidths[i] - 2, yPosition, { align: 'right' });
+        } else if (header) {
+          doc.text(header, colPositions[i] + 2, yPosition);
+        }
+      });
+      yPosition += 8;
       
       // Table border
-      addLine(margin, yPosition - 6, pageWidth - margin, yPosition - 6);
+      doc.setLineWidth(0.5);
+      doc.setDrawColor(0, 0, 0);
+      doc.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += 3;
     };
 
     // Draw initial table header
@@ -305,47 +248,36 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
         drawTableHeader(); // Redraw header on new page
       }
       
-      // Handle dynamic narration wrapping
-      const maxNarrationWidth = colWidths[2] - 4; // Leave some padding
+      // Handle dynamic narration wrapping - match reference format
+      const maxNarrationWidth = colWidths[2] - 4;
       const narrationLines = doc.splitTextToSize(transaction.narration, maxNarrationWidth);
-      const rowHeight = Math.max(6, narrationLines.length * 4); // Minimum 6mm, 4mm per line
       
-      // Calculate running balance if not provided
-      let runningBalanceValue = transaction.runningBalance;
-      if (!runningBalanceValue && index === 0) {
-        // Start with current balance for first transaction (working backwards)
-        runningBalanceValue = parseFloat(setup.currentBalance).toString();
-      } else if (!runningBalanceValue && index > 0) {
-        const prevBalance = parseFloat(transactions[index - 1].runningBalance || '0');
-        runningBalanceValue = (prevBalance - parseFloat(transaction.debitAmount || '0') + parseFloat(transaction.creditAmount || '0')).toString();
-      }
+      // Use running balance from API response or calculate
+      const runningBalanceValue = transaction.runningBalance || '0';
       
-      const rowData = [
-        formatDate(transaction.transactionDate),
-        formatDate(transaction.valueDate),
-        narrationLines[0] || transaction.narration, // First line for main row
-        parseFloat(transaction.debitAmount) > 0 ? formatCurrency(transaction.debitAmount) : '0.00',
-        parseFloat(transaction.creditAmount) > 0 ? formatCurrency(transaction.creditAmount) : '0.00',
-        formatCurrency(runningBalanceValue || '0'),
-      ];
-
-      // Draw main row data
-      rowData.forEach((data, i) => {
-        if (i >= 3) {
-          doc.text(data, colPositions[i] + colWidths[i] - 2, yPosition, { align: 'right' });
-        } else {
-          doc.text(data, colPositions[i] + 2, yPosition);
-        }
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+      
+      // Draw transaction data
+      doc.text(formatDate(transaction.transactionDate), colPositions[0] + 2, yPosition);
+      doc.text(formatDate(transaction.valueDate), colPositions[1] + 2, yPosition);
+      
+      // Draw narration lines
+      narrationLines.forEach((line: string, lineIndex: number) => {
+        doc.text(line, colPositions[2] + 2, yPosition + (lineIndex * 4));
       });
       
-      // Draw additional narration lines if any
-      if (narrationLines.length > 1) {
-        for (let lineIndex = 1; lineIndex < narrationLines.length; lineIndex++) {
-          yPosition += 4;
-          doc.text(narrationLines[lineIndex], colPositions[2] + 2, yPosition);
-        }
-      }
-
+      // Draw amounts - right aligned
+      const debitAmount = parseFloat(transaction.debitAmount) > 0 ? formatCurrency(transaction.debitAmount) : '0.00';
+      const creditAmount = parseFloat(transaction.creditAmount) > 0 ? formatCurrency(transaction.creditAmount) : '0.00';
+      
+      doc.text(debitAmount, colPositions[3] + colWidths[3] - 2, yPosition, { align: 'right' });
+      doc.text(creditAmount, colPositions[4] + colWidths[4] - 2, yPosition, { align: 'right' });
+      doc.text(formatCurrency(runningBalanceValue), colPositions[5] + colWidths[5] - 2, yPosition, { align: 'right' });
+      
+      // Calculate row height based on narration lines
+      const rowHeight = Math.max(8, narrationLines.length * 4 + 4);
       yPosition += rowHeight;
       
       // Add subtle row separator
@@ -366,13 +298,14 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
     doc.text('No transactions found for the selected period.', pageWidth / 2, yPosition, { align: 'center' });
   }
 
-  // Footer
+  // Footer - Match reference PDF format
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    doc.setFontSize(8);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Page ${i}      of ${totalPages}`, pageWidth - margin, pageHeight - 15, { align: 'right' });
   }
 
   // Save the PDF with actual transaction dates
