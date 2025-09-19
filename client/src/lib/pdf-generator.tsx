@@ -154,7 +154,7 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
   doc.text('Effective Available', pageWidth / 2, yPosition);
   doc.text(formatCurrency(setup.availableBalance), pageWidth / 2 + 60, yPosition);
   yPosition += 6;
-  doc.text('Balance', pageWidth / 2 + 60, yPosition);
+  doc.text('Balance', pageWidth / 2, yPosition);
   yPosition += 8;
 
   // Row 2: Uncleared Balance and Tax Registration Number
@@ -198,8 +198,8 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
     // Table headers - Match reference PDF format exactly
     const headers = ['Transaction', 'Value Date', 'Narration', 'Debit', 'Credit', 'Running'];
     const headers2 = ['Date', '', '', '', '', 'Balance'];
-    // Column widths matching reference PDF layout
-    const colWidths = [20, 20, 90, 25, 25, 25]; // Total fits A4 width
+    // Column widths adjusted to fit within content area (170mm)
+    const colWidths = [18, 18, 80, 18, 18, 18]; // Total = 170mm, fits within contentWidth
     const colPositions = colWidths.reduce((acc, width, i) => {
       acc.push(i === 0 ? margin : acc[i - 1] + colWidths[i - 1]);
       return acc;
@@ -243,17 +243,20 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
     // Transaction rows
     doc.setFont('helvetica', 'normal');
     transactions.forEach((transaction, index) => {
-      const isNewPage = checkPageBreak(8);
+      // Calculate row requirements first
+      const maxNarrationWidth = colWidths[2] - 4;
+      const narrationLines = doc.splitTextToSize(transaction.narration, maxNarrationWidth);
+      const rowHeight = Math.max(8, narrationLines.length * 4 + 4);
+      
+      // Check for page break with proper space calculation
+      const requiredSpace = rowHeight + (index === 0 ? 17 : 0); // Include header space on first row
+      const isNewPage = checkPageBreak(requiredSpace);
       if (isNewPage) {
         drawTableHeader(); // Redraw header on new page
       }
       
-      // Handle dynamic narration wrapping - match reference format
-      const maxNarrationWidth = colWidths[2] - 4;
-      const narrationLines = doc.splitTextToSize(transaction.narration, maxNarrationWidth);
-      
-      // Use running balance from API response or calculate
-      const runningBalanceValue = transaction.runningBalance || '0';
+      // Use running balance from API response or default to 0
+      const runningBalanceRaw = transaction.runningBalance || '0';
       
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
@@ -274,10 +277,8 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
       
       doc.text(debitAmount, colPositions[3] + colWidths[3] - 2, yPosition, { align: 'right' });
       doc.text(creditAmount, colPositions[4] + colWidths[4] - 2, yPosition, { align: 'right' });
-      doc.text(formatCurrency(runningBalanceValue), colPositions[5] + colWidths[5] - 2, yPosition, { align: 'right' });
+      doc.text(formatCurrency(runningBalanceRaw), colPositions[5] + colWidths[5] - 2, yPosition, { align: 'right' });
       
-      // Calculate row height based on narration lines
-      const rowHeight = Math.max(8, narrationLines.length * 4 + 4);
       yPosition += rowHeight;
       
       // Add subtle row separator
