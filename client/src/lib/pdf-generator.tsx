@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import type { AccountSetup, Transaction } from "@shared/schema";
 
 export async function generatePDF(setup: AccountSetup, transactions: Transaction[]) {
-  const doc = new jsPDF();
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
   const margin = 20;
@@ -51,6 +51,20 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
     }
     return false;
   };
+
+  const ensureSpace = (requiredSpace: number) => {
+    if (yPosition + requiredSpace > pageHeight - margin) {
+      doc.addPage();
+      yPosition = margin;
+    }
+  };
+
+  // Derive actual statement period from transactions
+  const sortedTransactions = transactions.length > 0 
+    ? [...transactions].sort((a, b) => new Date(a.transactionDate).getTime() - new Date(b.transactionDate).getTime())
+    : [];
+  const actualFromDate = sortedTransactions.length > 0 ? sortedTransactions[0].transactionDate : setup.fromDate;
+  const actualToDate = sortedTransactions.length > 0 ? sortedTransactions[sortedTransactions.length - 1].transactionDate : setup.toDate;
 
   // Header with businessONLINE and Emirates NBD styling
   doc.setFontSize(16);
