@@ -69,21 +69,28 @@ export default function StatementGenerator() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b border-border shadow-sm">
+      <header className="bg-white border-b-2 border-blue-900 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <FileText className="text-primary text-2xl" />
-              <h1 className="text-xl font-semibold text-foreground">Account Statement Generator</h1>
+              <div className="text-blue-900 text-xl font-bold">
+                business<span className="text-orange-500">ONLINE</span>
+              </div>
             </div>
-            <Button
-              onClick={handleExportPDF}
-              disabled={!currentSetup || transactions.length === 0}
-              data-testid="button-export-pdf"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export PDF
-            </Button>
+            <div className="flex items-center space-x-4">
+              <div className="text-white bg-blue-900 px-4 py-2 rounded font-bold text-sm">
+                Emirates NBD
+              </div>
+              <Button
+                onClick={handleExportPDF}
+                disabled={!currentSetup || transactions.length === 0}
+                data-testid="button-export-pdf"
+                className="bg-blue-900 hover:bg-blue-800 text-white"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export PDF
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -91,7 +98,7 @@ export default function StatementGenerator() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Tab Navigation */}
         <div className="mb-6">
-          <div className="border-b border-border">
+          <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
               {tabs.map((tab) => (
                 <button
@@ -99,8 +106,8 @@ export default function StatementGenerator() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
                     activeTab === tab.id
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
+                      ? "border-blue-900 text-blue-900"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }`}
                   data-testid={`button-tab-${tab.id}`}
                 >
