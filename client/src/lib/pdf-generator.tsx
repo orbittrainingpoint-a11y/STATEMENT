@@ -92,6 +92,9 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
   yPosition += 20;
 
+  // Ensure space for title section
+  ensureSpace(30);
+  
   // Title
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
@@ -112,6 +115,9 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
   doc.text(`Generated ${currentDate} by ${userName}`, pageWidth / 2, yPosition, { align: 'center' });
   yPosition += 25;
 
+  // Ensure space for Account Information section
+  ensureSpace(90);
+  
   // Account Information - styled exactly like Emirates NBD
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
@@ -168,6 +174,9 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
 
   yPosition += 70;
 
+  // Ensure space for Balance Information section
+  ensureSpace(90);
+  
   // Balance Information - styled exactly like Emirates NBD
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
@@ -227,6 +236,9 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
 
   yPosition += 70;
 
+  // Ensure space for Account Statement section and table
+  ensureSpace(50);
+  
   // Account Statement Section - styled exactly like Emirates NBD
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
@@ -246,15 +258,15 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(120, 120, 120);
-  doc.text(`From: ${formatDate(setup.fromDate)} to ${formatDate(setup.toDate)}`, margin, yPosition);
+  doc.text(`From: ${formatDate(actualFromDate)} to ${formatDate(actualToDate)}`, margin, yPosition);
   yPosition += 15;
 
   // Transactions table
   if (transactions.length > 0) {
     // Table headers
     const headers = ['Date', 'Value Date', 'Narration', 'Debit', 'Credit', 'Balance'];
-    // Adjust column widths to fit within contentWidth (~170)
-    const colWidths = [20, 20, 70, 20, 20, 20]; // Total = 170, fits within contentWidth
+    // Improved column widths for better readability
+    const colWidths = [22, 22, 80, 22, 22, 24]; // Total = 192, better balance
     const colPositions = colWidths.reduce((acc, width, i) => {
       acc.push(i === 0 ? margin : acc[i - 1] + colWidths[i - 1]);
       return acc;
@@ -293,15 +305,31 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
         drawTableHeader(); // Redraw header on new page
       }
       
+      // Handle dynamic narration wrapping
+      const maxNarrationWidth = colWidths[2] - 4; // Leave some padding
+      const narrationLines = doc.splitTextToSize(transaction.narration, maxNarrationWidth);
+      const rowHeight = Math.max(6, narrationLines.length * 4); // Minimum 6mm, 4mm per line
+      
+      // Calculate running balance if not provided
+      let runningBalanceValue = transaction.runningBalance;
+      if (!runningBalanceValue && index === 0) {
+        // Start with current balance for first transaction (working backwards)
+        runningBalanceValue = parseFloat(setup.currentBalance).toString();
+      } else if (!runningBalanceValue && index > 0) {
+        const prevBalance = parseFloat(transactions[index - 1].runningBalance || '0');
+        runningBalanceValue = (prevBalance - parseFloat(transaction.debitAmount || '0') + parseFloat(transaction.creditAmount || '0')).toString();
+      }
+      
       const rowData = [
         formatDate(transaction.transactionDate),
         formatDate(transaction.valueDate),
-        transaction.narration.length > 35 ? transaction.narration.substring(0, 32) + '...' : transaction.narration,
+        narrationLines[0] || transaction.narration, // First line for main row
         parseFloat(transaction.debitAmount) > 0 ? formatCurrency(transaction.debitAmount) : '0.00',
         parseFloat(transaction.creditAmount) > 0 ? formatCurrency(transaction.creditAmount) : '0.00',
-        formatCurrency(transaction.runningBalance || '0'),
+        formatCurrency(runningBalanceValue || '0'),
       ];
 
+      // Draw main row data
       rowData.forEach((data, i) => {
         if (i >= 3) {
           doc.text(data, colPositions[i] + colWidths[i] - 2, yPosition, { align: 'right' });
@@ -309,8 +337,16 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
           doc.text(data, colPositions[i] + 2, yPosition);
         }
       });
+      
+      // Draw additional narration lines if any
+      if (narrationLines.length > 1) {
+        for (let lineIndex = 1; lineIndex < narrationLines.length; lineIndex++) {
+          yPosition += 4;
+          doc.text(narrationLines[lineIndex], colPositions[2] + 2, yPosition);
+        }
+      }
 
-      yPosition += 6;
+      yPosition += rowHeight;
       
       // Add subtle row separator
       if (index < transactions.length - 1) {
@@ -339,7 +375,7 @@ export async function generatePDF(setup: AccountSetup, transactions: Transaction
     doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
   }
 
-  // Save the PDF
-  const fileName = `Account_Statement_${setup.accountNumber}_${formatDateForFilename(setup.fromDate)}_to_${formatDateForFilename(setup.toDate)}.pdf`;
+  // Save the PDF with actual transaction dates
+  const fileName = `Account_Statement_${setup.accountNumber}_${formatDateForFilename(actualFromDate)}_to_${formatDateForFilename(actualToDate)}.pdf`;
   doc.save(fileName);
 }
